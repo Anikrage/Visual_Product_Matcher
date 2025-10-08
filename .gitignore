@@ -1,2 +1,5 @@
 venv/
 /fashion-product-images-small
+.env
+*.env
+__pycache__/
