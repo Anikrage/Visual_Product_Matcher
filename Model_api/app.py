@@ -29,14 +29,18 @@ database=os.getenv('MONGO_DATABASE','product_matcher_db')
 connect_url=f"mongodb+srv://{username}:{password}@{cluster}/?retryWrites=true&w=majority&appName=ProductImageCluster"
 
 client = MongoClient(connect_url, server_api=ServerApi('1'))
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
 
 db=client[database]
 products_collection=db['products']
+
+#caching all documents at startup
+docs=list(products_collection.find({"embedding":{"$exists": True}},{"product_id": 1, "name": 1,"image_url": 1,"embedding":1}))
+
+#storing as numpy array for faster computation
+P_IDS=[doc["product_id"]for doc in docs]
+P_NAME=[doc["name"]for doc in docs]
+P_IMG=[doc["image_url"]for doc in docs]
+P_EMB=np.array([doc["embedding"]for doc in docs])
 
 #ResNet50 Model Init
 model=ResNet50(weights='imagenet',include_top=False,pooling='avg')
@@ -46,8 +50,8 @@ model=ResNet50(weights='imagenet',include_top=False,pooling='avg')
 def get_image_features(imgb:bytes) -> np.ndarray:
   try:
     img=Image.open(BytesIO(imgb))
-
-    img = img.convert('RGB')
+    if img.mode!="RGB":
+        img = img.convert('RGB')
     img = img.resize((224,224))
     img_array=img_to_array(img)
     img_array=np.expand_dims(img_array,axis=0)
@@ -69,31 +73,35 @@ async def find_similar(file: UploadFile=File(...),k:int=5):
         raise HTTPException(status_code=400, detail="image file invalid")
     content = await file.read()
     img_vec=get_image_features(content) #gets the image embeddings 
-    
-    docs=list(products_collection.find({"embedding":{"$exists": True}})) 
-    if not docs:
-        raise HTTPException(status_code=500, detail="Database error")
-    
-    sim_ar=[]
-    for item in docs: #computes and stores the similarity scores
-        emb=np.array(item["embedding"])
-        score=cosine_similarity([img_vec],[emb])[0][0]
-        sim_ar.append((score,item["product_id"],item["name"],item["image_url"]))
+    img_vec_2d=img_vec.reshape(1,-1)
+
+    #calculate similarity
+    sim=cosine_similarity(img_vec_2d,P_EMB)[0]
     
     #sort and select top k items
-    sim_ar.sort(key=lambda x:x[0], reverse=True)
-    top_items=sim_ar[:k]
-    
+    top_item_index=np.argsort(sim)[::-1][:k]    
     response=[]
-    for score,pid,name,url in top_items:
+    for i in top_item_index:
         response.append({
-            "product_id": pid,
-            "name": name,
-            "image_url": url,
-            "similarity": float(score)
+            "product_id": int(P_IDS[i]),
+            "name": P_NAME[i],
+            "image_url": P_IMG[i],
+            "similarity": float(sim[i])
         })
         
     return {"results":response}
+
+#testing db server access
+@app.get("/test_db")
+def test_db():
+    try:
+        client.admin.command('ping')
+        return {
+            "status": "connected",
+            "database": database,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=f"db connectivity error: {str(e)}")
 
 #health check endpoint
 @app.get("/health")
