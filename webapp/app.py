@@ -103,7 +103,7 @@ def search_product():
     try:
         with open(fpath,'rb') as f:
             filedata={'file':(filename,f,'image/jpeg')}
-            api_res=requests.post(api_url,files=filedata,params={'k':50},timeout=30)
+            api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.6},timeout=30)
             
             if api_res.status_code != 200: #show errors
                 flash('API error')
@@ -112,7 +112,7 @@ def search_product():
             results=api_res.json()['results']
             filtered=[]
             for item in results:
-                if item['similarity'] < 0.50:
+                if item['similarity'] < 0.60:
                     continue
                 prod_data=products_collection.find_one({'product_id':item['product_id']})
                 
