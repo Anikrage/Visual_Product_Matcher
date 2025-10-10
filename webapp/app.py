@@ -7,7 +7,8 @@ from flask import request,redirect
 from flask import url_for,flash,jsonify
 
 from dotenv import load_dotenv
-from pymongo import mongo_client
+from werkzeug.utils import secure_filename
+from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
 load_dotenv()
@@ -22,8 +23,133 @@ UPLOAD_FOLDER='static/uploads'
 allowed_extensions={'png','jpg','jpeg','webp'}
 max_file_size=5242880 #5MB
 
+os.makedirs(UPLOAD_FOLDER,exist_ok=True)
+
+username=os.getenv('MONGO_USERNAME')
+password=os.getenv('MONGO_PASSWORD') 
+cluster=os.getenv('MONGO_CLUSTER')
+database=os.getenv('MONGO_DATABASE','product_matcher_db')
+
 app.config['UPLOAD_FOLDER']=UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH']=max_file_size
+
+#database connectivity to MondodbATlas
+connect_url=f"mongodb+srv://{username}:{password}@{cluster}/?retryWrites=true&w=majority&appName=ProductImageCluster"
+
+client = MongoClient(connect_url, server_api=ServerApi('1'))
+
+db=client[database]
+products_collection=db['products']
+
+#startup cache
+master_cache = sorted(products_collection.distinct('master_category'))
+sub_cache = sorted(products_collection.distinct('sub_category'))
+
+def check_filetype(fname):
+    return '.' in fname and fname.rsplit('.', 1)[1].lower() in allowed_extensions
+
+#Homepage
+@app.route('/')
+def index():
+    master_category=request.args.get('master_category','')
+    sub_category=request.args.get('sub_category','')
+    
+    query={}
+    if master_category:
+        query['master_category']=master_category
+    if sub_category:
+        query['sub_category']=sub_category
+        
+    prod_list=list(products_collection.find(query).limit(100))
+    
+    return render_template('index.html',
+                           products=prod_list,
+                           master_categories=master_cache,
+                           sub_categories=sub_cache,
+                           current_master=master_category,
+                           current_sub=sub_category)
+
+@app.route('/health')
+def health():
+    client.admin.command('ping')
+    return {
+        "service:": "running",
+        "db_status": "connected",
+        "database": database,
+    }
+
+
+@app.route('/search',methods=['POST'])
+def search_product():
+    if 'image' not in request.files:
+        flash('Please upload an image')
+        return redirect(url_for('index'))
+    
+    #sanity checks
+    file=request.files['image']
+    if file.filename=='' or not check_filetype(file.filename):
+        return redirect(url_for('index'))
+    
+    res_num=int(request.form.get('k',10))
+    master_filter=request.form.get('master_category','')
+    sub_filter=request.form.get('sub_category','')
+    
+    #save the uploaded file
+    filename=secure_filename(file.filename)
+    fpath=os.path.join(app.config['UPLOAD_FOLDER'],filename)
+    file.save(fpath)
+    
+    #main functionality stuff
+    try:
+        with open(fpath,'rb') as f:
+            filedata={'file':(filename,f,'image/jpeg')}
+            api_res=requests.post(api_url,files=filedata,params={'k':50},timeout=30)
+            
+            if api_res.status_code != 200: #show errors
+                flash('API error')
+                return redirect(url_for('index'))
+            
+            results=api_res.json()['results']
+            filtered=[]
+            for item in results:
+                if item['similarity'] < 0.50:
+                    continue
+                prod_data=products_collection.find_one({'product_id':item['product_id']})
+                
+                if not prod_data:
+                    continue
+                if master_filter and prod_data['master_category']!=master_filter:
+                    continue
+                if sub_filter and prod_data['sub_category']!=sub_filter:
+                    continue
+                item['master_category']=prod_data['master_category']
+                item['sub_category']=prod_data['sub_category']
+                filtered.append(item)
+                
+                if len(filtered) >= res_num:
+                    break
+                
+        master_cats=products_collection.distinct('master_category')
+        sub_cats=products_collection.distinct('sub_category')
+        
+        return render_template('results.html',
+                                results=filtered,
+                                master_categories=master_cache,
+                                sub_categories=sub_cache,
+                                filter_master=master_filter,
+                                filter_sub=sub_filter)
+    except Exception as e:
+        flash(str(e),'error')
+        return redirect(url_for('index'))
+
+    finally:
+        if os.path.exists(fpath):
+            os.remove(fpath)
+            
+@app.route('/test')
+def test():
+    test_data = ['apple', 'banana']
+    return render_template('test.html', fruits=test_data)
 
 if __name__=='__main__':
     app.run(debug=True,port=5000)
