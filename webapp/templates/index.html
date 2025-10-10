@@ -35,17 +35,6 @@
                             <input type="file" name="image" class="form-control" accept="image/*" required>
                         </div>
                         <div class="col-md-3">
-                            <select name="master_category" class="form-select">
-                                <option value="">All Master Categories</option>
-                                {% for cat in master_categories %}
-                                <option value="{{ cat }}">{{ cat }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <input type="number" name="k" class="form-control" value="10" min="5" max="20">
-                        </div>
-                        <div class="col-md-3">
                             <button type="submit" class="btn btn-light w-100">Search</button>
                         </div>
                     </div>

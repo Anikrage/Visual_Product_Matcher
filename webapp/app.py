@@ -103,7 +103,7 @@ def search_product():
     try:
         with open(fpath,'rb') as f:
             filedata={'file':(filename,f,'image/jpeg')}
-            api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.6},timeout=30)
+            api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.8},timeout=30)
             
             if api_res.status_code != 200: #show errors
                 flash('API error')
@@ -152,4 +152,4 @@ def test():
     return render_template('test.html', fruits=test_data)
 
 if __name__=='__main__':
-    app.run(debug=True,port=5000)
+    app.run(debug=True,host='0.0.0.0',port=5000)
