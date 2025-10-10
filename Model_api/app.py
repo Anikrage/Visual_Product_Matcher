@@ -15,6 +15,9 @@ from PIL import Image
 from requests import get
 from sklearn.metrics.pairwise import cosine_similarity
 
+import clip
+import torch
+
 app=FastAPI()
 
 #environment secrets
@@ -34,59 +37,92 @@ db=client[database]
 products_collection=db['products']
 
 #caching all documents at startup
-docs=list(products_collection.find({"embedding":{"$exists": True}},{"product_id": 1, "name": 1,"image_url": 1,"embedding":1}))
+docs=list(products_collection.find({"embedding":{"$exists": True}},{"product_id": 1, "name": 1,"image_url": 1,"embedding":1, "clip_embedding":1}))
 
 #storing as numpy array for faster computation
 P_IDS=[doc["product_id"]for doc in docs]
 P_NAME=[doc["name"]for doc in docs]
 P_IMG=[doc["image_url"]for doc in docs]
 P_EMB=np.array([doc["embedding"]for doc in docs])
+P_CEMB = np.array([doc.get("clip_embedding", doc["embedding"]) for doc in docs])
 
 #ResNet50 Model Init
 model=ResNet50(weights='imagenet',include_top=False,pooling='avg')
 
+#load CLIP
+device='cpu'
+clip_model,clip_preprocess=clip.load("ViT-B/32",device=device)
+
 #extracts the embeddings from the image
 #accepts image in byte stream and returns ndarray
-def get_image_features(imgb:bytes) -> np.ndarray:
+def get_image_features(imgb):
   try:
-    img=Image.open(BytesIO(imgb))
-    if img.mode!="RGB":
-        img = img.convert('RGB')
-    img = img.resize((224,224))
-    img_array=img_to_array(img)
-    img_array=np.expand_dims(img_array,axis=0)
-    img_array=preprocess_input(img_array)
-    features=model.predict(img_array,verbose=0)
-    features=features.flatten()
-    normalized=np.linalg.norm(features)
-    if normalized > 0:
-      features=features/normalized
+      img=Image.open(BytesIO(imgb))
+      if img.mode!="RGB":
+          img = img.convert('RGB')
+      img = img.resize((224,224))
+      img_array=img_to_array(img)
+      img_array=np.expand_dims(img_array,axis=0)
+      img_array=preprocess_input(img_array)
+      features=model.predict(img_array,verbose=0)
+      features=features.flatten()
+      normalized=np.linalg.norm(features)
+      if normalized > 0:
+        features=features/normalized
 
-    return features
+      return features
+
   except Exception as e:
-    print(f"Error: {e}")
+      print(f"Error resnet: {e}")
+      return None
 
+def get_clip_features(imgb):
+    try:
+        img=Image.open(BytesIO(imgb))
+        if img.mode!="RGB":
+            img = img.convert('RGB')
+        img_input=clip_preprocess(img).unsqueeze(0).to(device)
+        with torch.no_grad():
+            ftrs=clip_model.encode_image(img_input)
+            ftrs=ftrs.cpu().numpy().flatten()
+        norm = np.linalg.norm(ftrs)
+        if norm > 0:
+            ftrs=ftrs/norm
+        return ftrs
+    except Exception as e:
+        print(f"Error Clip: {e}")
+        return None
+        
+        
 #api endpoint for /find_similar
 @app.post("/find_similar")
-async def find_similar(file: UploadFile=File(...),k:int=5):
+async def find_similar(file: UploadFile=File(...),k:int=5, a:float=0.5):
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="image file invalid")
     content = await file.read()
+    
     img_vec=get_image_features(content) #gets the image embeddings 
     img_vec_2d=img_vec.reshape(1,-1)
 
+    clip_vec=get_clip_features(content)
+    clip_vec_2d=clip_vec.reshape(1,-1)
+    
     #calculate similarity
-    sim=cosine_similarity(img_vec_2d,P_EMB)[0]
+    res_sim=cosine_similarity(img_vec_2d,P_EMB)[0]
+    clip_sim=cosine_similarity(clip_vec_2d,P_CEMB)[0]
+    
+    #weighted Combination
+    h_sim=a * clip_sim + (1 - a)*res_sim
     
     #sort and select top k items
-    top_item_index=np.argsort(sim)[::-1][:k]    
+    top_item_index=np.argsort(h_sim)[::-1][:k]    
     response=[]
     for i in top_item_index:
         response.append({
             "product_id": int(P_IDS[i]),
             "name": P_NAME[i],
             "image_url": P_IMG[i],
-            "similarity": float(sim[i])
+            "similarity": float(h_sim[i])
         })
         
     return {"results":response}
@@ -107,3 +143,7 @@ def test_db():
 @app.get("/health")
 def health_check():
     return {"status": "OK"}
+
+@app.get("/")
+async def root():
+    return {"message": "Api service working"}
