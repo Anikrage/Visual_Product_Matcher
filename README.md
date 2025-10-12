@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-![Product Matcher Demo](assets/demo.gif)
+![Product Matcher Demo](demo.gif)
 
 ## 👤 Author
 **Anik Halder**  
