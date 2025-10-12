@@ -59,7 +59,8 @@ def index():
         query['master_category']=master_category
     if sub_category:
         query['sub_category']=sub_category
-        
+    
+    totalcount=products_collection.count_documents(query)
     prod_list=list(products_collection.find(query).limit(100))
     
     return render_template('index.html',
