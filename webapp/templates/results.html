@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="author" content="Anik Halder 24MCA0251">
-    <title>Visual Product Matcher by Anik Halder 24MCA0251</title>
+    <title>Document</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .prod-img{height:200px;object-fit:cover;}
+        .prod-img{height:200px;object-fit:cover;width:100%;}
+        @media (max-width:576px){.prod-img{height:150px;}}
     </style>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">Product Matcher</a>
-            <div>
-                <a href="https://github.com/Anikrage" target="_blank" class="text-white text-decoration-none me-3">GitHub</a>
-                <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank" class="text-white text-decoration-none">Repository</a>
+        <div class="container-fluid px-3">
+            <a href="/" class="navbar-brand">Product Matcher</a>
+            <div class="d-none d-md-block">
+                <a href="https://github.com/anikhalder" style="color:#fff;text-decoration:none;margin-right:10px;">GitHub</a>
+                <a href="https://github.com/anikhalder/product-visual-matcher" style="color:#fff;text-decoration:none;">Repository</a>
             </div>
         </div>
     </nav>
-    <div class="container mt-4">
+
+    <div class="container-fluid px-3 mt-3">
         <div class="alert alert-success">
-            {{results|length}} products found
+            Found {{results|length}} products
         </div>
 
         {%if filter_master or filter_sub%}
@@ -31,13 +32,13 @@
         </div>
         {%endif%}
 
-        <div class="row">
-            {% for item in results %}
-            <div class="col-3" style="margin-bottom:15px;">
+        <div class="row g-3">
+            {%for item in results%}
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                 <div class="card">
                     <img src="{{item.image_url}}" class="card-img-top prod-img">
-                    <div class="card-body">
-                        <p style="margin-bottom:5px;">{{item.name}}</p>
+                    <div class="card-body p-2">
+                        <p class="mb-1" style="font-size:14px">{{item.name}}</p>
                         
                         {%set score=item.similarity*100%}
                         {%if score>=80%}
@@ -49,29 +50,30 @@
                         {%endif%}
                         
                         <br>
-                        <small class="text-muted">{{item.master_category}}</small><br>
-                        <small class="text-muted">{{item.sub_category}}</small>
+                        <small class="text-muted d-block" style="font-size:12px">{{item.master_category}}</small>
+                        <small class="text-muted" style="font-size:12px">{{item.sub_category}}</small>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+            {%endfor%}
         </div>
 
         {%if results|length==0%}
-        <div style="text-align:center;padding:50px;">
-            <p>No results</p>
+        <div class="text-center py-5">
+            <p>Nothing found</p>
         </div>
         {%endif%}
 
-        <div style="margin-top:30px; margin-bottom:30px;">
-            <a href="/" class="btn btn-primary">Go Back</a>
+        <div class="my-4" style="text-align: center;">
+            <a href="/" class="btn btn-primary">Back</a>
         </div>
     </div>
 
+    <footer class="bg-light text-center py-3 mt-4">
+        <p class="mb-0 small">Built by <a href="https://github.com/anikhalder">Anik Halder</a> | 
+        <a href="https://github.com/anikhalder/product-visual-matcher">Code</a></p>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-<footer class="bg-light text-center py-3 mt-5">
-    <p class="mb-0">Built by <a href="https://github.com/Anikrage" target="_blank">Anik Halder</a> | 
-    <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank">View Source</a></p>
-</footer>
 </html>

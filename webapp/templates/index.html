@@ -17,19 +17,23 @@
             margin-bottom:25px;
             border-radius:5px;
         }
+        @media (max-width:576px){
+            .prod-img{height:150px;}
+            .search-box{padding:15px;}
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Product Matcher</a>
-            <div>
+            <div class="d-none d-md-block">
                 <a href="https://github.com/Anikrage" target="_blank" class="text-white text-decoration-none me-3">GitHub</a>
                 <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank" class="text-white text-decoration-none">Repository</a>
             </div>
         </div>
     </nav>
-    <div class="container mt-4">
+    <div class="container-fluid px-3 mt-3">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="alert alert-warning">
@@ -38,20 +42,22 @@
         {% endif %}
         {% endwith %}
 
+
         <!-- image search -->
         <div class="search-box text-white">
             <h4>Upload Image to Search</h4>
             <form action="/search" method="POST" enctype="multipart/form-data">
                 <div class="row">
-                    <div class="col-md-9">
+                    <div class="col-12 col-md-9" style="margin-bottom:10px;">
                         <input type="file" name="image" class="form-control" required>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-12 col-md-3">
                         <button type="submit" class="btn btn-light w-100">Search</button>
                     </div>
                 </div>
             </form>
         </div>
+
 
         <!-- filters -->
         <div class="card mb-4">
@@ -59,7 +65,7 @@
                 <strong>Filter</strong>
                 <form action="/" method="GET" class="mt-2">
                     <div class="row">
-                        <div class="col-md-5">
+                        <div class="col-12 col-md-5" style="margin-bottom:10px;">
                             <select name="master_category" class="form-select" onchange="this.form.submit()">
                                 <option value="">Master Category</option>
                                 {% for cat in master_categories %}
@@ -67,7 +73,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-12 col-md-5" style="margin-bottom:10px;">
                             <select name="sub_category" class="form-select" onchange="this.form.submit()">
                                 <option value="">Sub Category</option>
                                 {% for cat in sub_categories %}
@@ -75,7 +81,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-md-2">
                             <a href="/" class="btn btn-secondary w-100">Clear</a>
                         </div>
                     </div>
@@ -83,11 +89,12 @@
             </div>
         </div>
 
-        <p>Showing {{products|length}} out of {{total_products}} products</p>
+
+        <p id="prodCount">Showing {{products|length}} out of {{total_products}} products</p>
         
         <div class="row" id="prodContainer">
             {% for product in products %}
-            <div class="col-3" style="margin-bottom:15px;">
+            <div class="col-6 col-md-3" style="margin-bottom:15px;">
                 <div class="card">
                     <img src="{{product.image_url}}" class="card-img-top prod-img">
                     <div class="card-body">
@@ -100,6 +107,7 @@
             {% endfor %}
         </div>
 
+
         {%if products|length==0%}
         <div style="text-align:center; padding:50px;">
             <p class="text-muted">No products</p>
@@ -110,6 +118,7 @@
             <button class="btn btn-primary" onclick="loadMore()">Load More</button>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -125,13 +134,13 @@
                 for(var i=0;i<data.products.length;i++){
                     var p=data.products[i];
                     var div=document.createElement('div');
-                    div.className='col-3';
+                    div.className='col-6 col-md-3';
                     div.style.marginBottom='15px';
                     div.innerHTML='<div class="card"><img src="'+p.image_url+'" class="card-img-top prod-img"><div class="card-body"><p style="margin-bottom:5px;">'+p.name+'</p><small class="text-muted">'+p.master_category+'</small><br><small class="text-muted">'+p.sub_category+'</small></div></div>';
                     container.appendChild(div);
                 }
                 offset+=data.products.length;
-                document.querySelector('p').textContent = 'Showing ' + offset + ' out of ' + totalProds + ' products';
+                document.getElementById('prodCount').textContent = 'Showing ' + offset + ' out of ' + totalProds + ' products';
                 if(!data.has_more || offset >= totalProds){
                     document.getElementById('loadMoreBtn').style.display='none';
                 }
