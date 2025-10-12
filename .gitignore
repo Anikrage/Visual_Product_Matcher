@@ -5,3 +5,5 @@ venv/
 __pycache__/
 /Model_api/token.txt
 /Model_api/README.md
+static/uploads/*
+!static/uploads/.gitkeep
