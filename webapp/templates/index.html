@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        <p>Products: {{products|length}}</p>
+        <p>Showing {{products|length}} out of {{total_products}} products</p>
         
         <div class="row" id="prodContainer">
             {% for product in products %}
@@ -113,14 +113,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        var offset=parseInt("{{products|length}}")
-        var mCat="{{current_master}}";
-        var sCat="{{current_sub}}";
-        
+        var offset = parseInt("{{products|length}}");
+        var mCat = "{{current_master}}";
+        var sCat = "{{current_sub}}";
+        var totalProds = parseInt("{{total_products}}");
         function loadMore(){
             fetch('/load_more?master_category='+mCat+'&sub_category='+sCat+'&offset='+offset)
-            .then(r=>r.json())
-            .then(data=>{
+            .then(function(r){return r.json()})
+            .then(function(data){
                 var container=document.getElementById('prodContainer');
                 for(var i=0;i<data.products.length;i++){
                     var p=data.products[i];
@@ -131,7 +131,8 @@
                     container.appendChild(div);
                 }
                 offset+=data.products.length;
-                if(!data.has_more){
+                document.querySelector('p').textContent = 'Showing ' + offset + ' out of ' + totalProds + ' products';
+                if(!data.has_more || offset >= totalProds){
                     document.getElementById('loadMoreBtn').style.display='none';
                 }
             });
