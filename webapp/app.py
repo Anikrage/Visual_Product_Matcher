@@ -103,7 +103,7 @@ def search_product():
     try:
         with open(fpath,'rb') as f:
             filedata={'file':(filename,f,'image/jpeg')}
-            api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.8},timeout=30)
+            api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.6},timeout=30)
             
             if api_res.status_code != 200: #show errors
                 flash('API error')
@@ -150,6 +150,30 @@ def search_product():
 def test():
     test_data = ['apple', 'banana']
     return render_template('test.html', fruits=test_data)
+
+#loads more products to homepage
+@app.route('/load_more')
+def load_more():
+    master_cat=request.args.get('master_category','')
+    sub_cat=request.args.get('sub_category','')
+    offset=int(request.args.get('offset',0))
+    query={}
+    if master_cat:
+        query['master_category']=master_cat
+    if sub_cat:
+        query['sub_category']=sub_cat
+    prod_list=list(products_collection.find(query).skip(offset).limit(24))
+    return jsonify({
+        'products': [
+            {
+                'name': p['name'],
+                'image_url': p['image_url'],
+                'master_category': p['master_category'],
+                'sub_category': p['sub_category']
+            } for p in prod_list
+        ],
+        'has_more': len(prod_list)==24
+    })
 
 if __name__=='__main__':
     app.run(debug=True,host='0.0.0.0',port=5000)

@@ -3,72 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Matcher</title>
+    <meta name="author" content="Anik Halder 24MCA0251">
+    <title>Visual Product Matcher by Anik Halder 24MCA0251</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .prod-img{
+            height:200px;
+            object-fit:cover;
+        }
+        .search-box{
+            background:#3867d6;
+            padding:20px;
+            margin-bottom:25px;
+            border-radius:5px;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Product Visual Matcher</a>
+            <a class="navbar-brand" href="/">Product Matcher</a>
+            <div>
+                <a href="https://github.com/Anikrage" target="_blank" class="text-white text-decoration-none me-3">GitHub</a>
+                <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank" class="text-white text-decoration-none">Repository</a>
+            </div>
         </div>
     </nav>
-
     <div class="container mt-4">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <div class="alert alert-warning alert-dismissible">
-            {% for msg in messages %}
-            {{ msg }}
-            {% endfor %}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-warning">
+            {% for msg in messages %}{{ msg }}{% endfor %}
         </div>
         {% endif %}
         {% endwith %}
 
-        <div class="card mb-4" style="background: linear-gradient(to right, #6a11cb, #2575fc); color: white;">
-            <div class="card-body">
-                <h3>Search Products by Image</h3>
-                <p>Upload any product image to find similar items</p>
-                <form action="/search" method="POST" enctype="multipart/form-data">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <input type="file" name="image" class="form-control" accept="image/*" required>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-light w-100">Search</button>
-                        </div>
+        <!-- image search -->
+        <div class="search-box text-white">
+            <h4>Upload Image to Search</h4>
+            <form action="/search" method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-9">
+                        <input type="file" name="image" class="form-control" required>
                     </div>
-                </form>
-            </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-light w-100">Search</button>
+                    </div>
+                </div>
+            </form>
         </div>
 
+        <!-- filters -->
         <div class="card mb-4">
-            <div class="card-header">
-                <h5>Filter Products</h5>
-            </div>
             <div class="card-body">
-                <form action="/" method="GET">
+                <strong>Filter</strong>
+                <form action="/" method="GET" class="mt-2">
                     <div class="row">
                         <div class="col-md-5">
-                            <label>Master Category</label>
                             <select name="master_category" class="form-select" onchange="this.form.submit()">
-                                <option value="">All</option>
+                                <option value="">Master Category</option>
                                 {% for cat in master_categories %}
-                                <option value="{{ cat }}" {% if cat == current_master %}selected{% endif %}>{{ cat }}</option>
+                                <option {%if cat==current_master%}selected{%endif%}>{{cat}}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-5">
-                            <label>Sub Category</label>
                             <select name="sub_category" class="form-select" onchange="this.form.submit()">
-                                <option value="">All</option>
+                                <option value="">Sub Category</option>
                                 {% for cat in sub_categories %}
-                                <option value="{{ cat }}" {% if cat == current_sub %}selected{% endif %}>{{ cat }}</option>
+                                <option {%if cat==current_sub%}selected{%endif%}>{{cat}}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label>&nbsp;</label>
                             <a href="/" class="btn btn-secondary w-100">Clear</a>
                         </div>
                     </div>
@@ -76,31 +83,63 @@
             </div>
         </div>
 
-        <h4>Products ({{ products|length }})</h4>
-        <hr>
-
-        <div class="row">
+        <p>Products: {{products|length}}</p>
+        
+        <div class="row" id="prodContainer">
             {% for product in products %}
-            <div class="col-md-3 mb-3">
+            <div class="col-3" style="margin-bottom:15px;">
                 <div class="card">
-                    <img src="{{ product.image_url }}" class="card-img-top" style="height: 220px; object-fit: cover;" loading="lazy">
+                    <img src="{{product.image_url}}" class="card-img-top prod-img">
                     <div class="card-body">
-                        <h6>{{ product.name }}</h6>
-                        <p class="text-muted small mb-0">{{ product.master_category }}</p>
-                        <p class="text-muted small">{{ product.sub_category }}</p>
+                        <p style="margin-bottom:5px;">{{product.name}}</p>
+                        <small class="text-muted">{{product.master_category}}</small><br>
+                        <small class="text-muted">{{product.sub_category}}</small>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        {% if products|length == 0 %}
-        <div class="alert alert-info text-center">
-            No products found. Try different filters.
+        {%if products|length==0%}
+        <div style="text-align:center; padding:50px;">
+            <p class="text-muted">No products</p>
         </div>
-        {% endif %}
+        {%endif%}
+        
+        <div style="text-align:center;margin:30px 0" id="loadMoreBtn">
+            <button class="btn btn-primary" onclick="loadMore()">Load More</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var offset=parseInt("{{products|length}}")
+        var mCat="{{current_master}}";
+        var sCat="{{current_sub}}";
+        
+        function loadMore(){
+            fetch('/load_more?master_category='+mCat+'&sub_category='+sCat+'&offset='+offset)
+            .then(r=>r.json())
+            .then(data=>{
+                var container=document.getElementById('prodContainer');
+                for(var i=0;i<data.products.length;i++){
+                    var p=data.products[i];
+                    var div=document.createElement('div');
+                    div.className='col-3';
+                    div.style.marginBottom='15px';
+                    div.innerHTML='<div class="card"><img src="'+p.image_url+'" class="card-img-top prod-img"><div class="card-body"><p style="margin-bottom:5px;">'+p.name+'</p><small class="text-muted">'+p.master_category+'</small><br><small class="text-muted">'+p.sub_category+'</small></div></div>';
+                    container.appendChild(div);
+                }
+                offset+=data.products.length;
+                if(!data.has_more){
+                    document.getElementById('loadMoreBtn').style.display='none';
+                }
+            });
+        }
+    </script>
 </body>
+<footer class="bg-light text-center py-3 mt-5">
+    <p class="mb-0">Built by <a href="https://github.com/Anikrage" target="_blank">Anik Halder</a> | 
+    <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank">View Source</a></p>
+</footer>
 </html>

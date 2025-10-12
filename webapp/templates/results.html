@@ -3,65 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
+    <meta name="author" content="Anik Halder 24MCA0251">
+    <title>Visual Product Matcher by Anik Halder 24MCA0251</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .prod-img{height:200px;object-fit:cover;}
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Product Visual Matcher</a>
+            <a class="navbar-brand" href="/">Product Matcher</a>
+            <div>
+                <a href="https://github.com/Anikrage" target="_blank" class="text-white text-decoration-none me-3">GitHub</a>
+                <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank" class="text-white text-decoration-none">Repository</a>
+            </div>
         </div>
     </nav>
-
     <div class="container mt-4">
         <div class="alert alert-success">
-            Found {{ results|length }} similar products
+            {{results|length}} products found
         </div>
 
-        {% if filter_master or filter_sub %}
+        {%if filter_master or filter_sub%}
         <div class="alert alert-info">
-            Filters: 
-            {% if filter_master %}Master: {{ filter_master }}{% endif %}
-            {% if filter_sub %} | Sub: {{ filter_sub }}{% endif %}
+            Filters: {%if filter_master%}{{filter_master}}{%endif%} {%if filter_sub%}- {{filter_sub}}{%endif%}
         </div>
-        {% endif %}
+        {%endif%}
 
         <div class="row">
             {% for item in results %}
-            <div class="col-md-3 mb-3">
+            <div class="col-3" style="margin-bottom:15px;">
                 <div class="card">
-                    <img src="{{ item.image_url }}" class="card-img-top" style="height: 220px; object-fit: cover;"loading="lazy">
+                    <img src="{{item.image_url}}" class="card-img-top prod-img">
                     <div class="card-body">
-                        <h6>{{ item.name }}</h6>
+                        <p style="margin-bottom:5px;">{{item.name}}</p>
                         
-                        {% set score = item.similarity * 100 %}
-                        {% if score >= 80 %}
-                        <span class="badge bg-success">{{ score|round(1) }}% match</span>
-                        {% elif score >= 70 %}
-                        <span class="badge bg-warning text-dark">{{ score|round(1) }}% match</span>
-                        {% else %}
-                        <span class="badge bg-secondary">{{ score|round(1) }}% match</span>
-                        {% endif %}
+                        {%set score=item.similarity*100%}
+                        {%if score>=80%}
+                        <span class="badge bg-success">{{score|round(1)}}%</span>
+                        {%elif score>=70%}
+                        <span class="badge bg-warning">{{score|round(1)}}%</span>
+                        {%else%}
+                        <span class="badge bg-secondary">{{score|round(1)}}%</span>
+                        {%endif%}
                         
-                        <p class="text-muted small mb-0 mt-2">{{ item.master_category }}</p>
-                        <p class="text-muted small">{{ item.sub_category }}</p>
+                        <br>
+                        <small class="text-muted">{{item.master_category}}</small><br>
+                        <small class="text-muted">{{item.sub_category}}</small>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        {% if results|length == 0 %}
-        <div class="alert alert-warning text-center">
-            No matching products found with current filters.
+        {%if results|length==0%}
+        <div style="text-align:center;padding:50px;">
+            <p>No results</p>
         </div>
-        {% endif %}
+        {%endif%}
 
-        <div class="text-center mt-4 mb-4">
-            <a href="/" class="btn btn-primary btn-lg">Back to Home</a>
+        <div style="margin-top:30px; margin-bottom:30px;">
+            <a href="/" class="btn btn-primary">Go Back</a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+<footer class="bg-light text-center py-3 mt-5">
+    <p class="mb-0">Built by <a href="https://github.com/Anikrage" target="_blank">Anik Halder</a> | 
+    <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank">View Source</a></p>
+</footer>
 </html>
