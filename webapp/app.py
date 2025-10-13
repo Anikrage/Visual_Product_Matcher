@@ -34,11 +34,21 @@ app.config['UPLOAD_FOLDER']=UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH']=max_file_size
 
 #database connectivity to MondodbATlas
+#Uncomment the below link and use for Deployment and testing if you have credentials
+'''
 connect_url=f"mongodb+srv://{username}:{password}@{cluster}/?retryWrites=true&w=majority&appName=ProductImageCluster"
+'''
+#Testing Access
+connect_url="mongodb+srv://visitor:gn5j5bMbakTnI3FX@productimagecluster.j4w7buk.mongodb.net/?retryWrites=true&w=majority&appName=ProductImageCluster"
 
 client = MongoClient(connect_url, server_api=ServerApi('1'))
 
+#use for actual deployment 
+'''
 db=client[database]
+'''
+#use for test access
+db=client['product_matcher_db']
 products_collection=db['products']
 
 #startup cache
