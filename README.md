@@ -101,7 +101,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 
 #### ✔ Database Access
 
-> Database access is configured for read-only test access.
+> Database access is configured for read-only test access.  
 > Email @ (anik.halder2024@vitstudent.ac.in) for Database Access and create .env
 
 #### Run application
