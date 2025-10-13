@@ -99,6 +99,10 @@ The system uses a **3-stage similarity ranking algorithm**:
 
 > pip install -r requirements.txt  
 
+#### ✔ Database Access
+
+> Email @ (anik.halder2024@vitstudent.ac.in) for Database Access
+
 #### Run application
 
 > cd webapp  
