@@ -90,12 +90,12 @@ The system uses a **3-stage similarity ranking algorithm**:
 
 ### Quick Start
 
-#### Clone repository
+#### ✔ Clone repository
 
 > git clone https://github.com/Anikrage/Visual_Product_Matcher.git  
 > cd Visual_Product_Matcher  
 
-#### Install dependencies
+#### ✔ Install dependencies
 
 > pip install -r requirements.txt  
 
@@ -104,7 +104,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 > Database access is configured for read-only test access.  
 > Email @ (anik.halder2024@vitstudent.ac.in) for Database Access and create .env
 
-#### Run application
+#### ✔ Run application
 
 > cd webapp  
 > python app.py  
