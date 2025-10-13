@@ -13,6 +13,16 @@
 (24MCA0251)  
 🎓 VIT Vellore
 
+## 📑 Table of Contents  
+- [Features](#-features)  
+- [Demo](#-demo)
+- [Project Report](#project-report)    
+- [Tech Stack](#-tech-stack)  
+- [Architecture](#-architecture)  
+- [Performance](#-performance)  
+- [Installation](#-installation)  
+- [License](#-license)  
+  
 ## ✨ Features
 
 - 🖼️ Upload product images to find visually similar items
@@ -24,6 +34,10 @@
 ## 🎯 Demo
 
 **Live Application:** [Products Visual Match](https://visual-product-matcher-1hkn.onrender.com/)
+
+## Project Report
+
+- [📄 Project Report (PDF)](./Project%20Report.pdf)  
 
 ### How It Works
 
