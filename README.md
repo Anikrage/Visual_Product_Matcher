@@ -8,36 +8,36 @@
 
 ![Product Matcher Demo](./demo.GIF)
 
-## 👤 Author
+##  Author
 **Anik Halder**  
 (24MCA0251)  
 🎓 VIT Vellore
 
-## 📑 Table of Contents  
-- [Features](#-features)  
-- [Demo](#-demo)
+## Table of Contents  
+- [Features](#features)  
+- [Demo](#demo)
 - [Project Report](#project-report)    
-- [Tech Stack](#%EF%B8%8F-tech-stack)  
-- [Architecture](#%EF%B8%8F-architecture)  
-- [Performance](#-performance)  
-- [Installation](#-installation)  
-- [License](#-license)  
+- [Tech Stack](#tech-stack)  
+- [Architecture](#architecture)  
+- [Performance](#performance)  
+- [Installation](#installation)  
+- [License](#license)  
   
-## ✨ Features
+## Features
 
-- 🖼️ Upload product images to find visually similar items
-- 🤖 Hybrid similarity matching using ResNet50, CLIP, and text embeddings
-- 🔍 Filter products by category and subcategory
-- 📱 Responsive mobile-friendly design
-- ⚡ Real-time product search with 90%+ accuracy
+- Upload product images to find visually similar items
+- Hybrid similarity matching using ResNet50, CLIP, and text embeddings
+- Filter products by category and subcategory
+- Responsive mobile-friendly design
+- Real-time product search with 90%+ accuracy
 
-## 🎯 Demo
+## Demo
 
 **Live Application:** [Products Visual Match](https://visual-product-matcher-1hkn.onrender.com/)
 
 ## Project Report
 
-- [📄 Project Report (PDF)](./Project%20Report.pdf)  
+- [Project Report (PDF)](./Project%20Report.pdf)  
 
 ### How It Works
 
@@ -45,7 +45,7 @@
 2. Upload a Product Image
 3. View similar products ranked by similarity score
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Flask** - Python web framework
@@ -63,7 +63,7 @@
 - **API:** HuggingFace Spaces
 - **Database:** MongoDB Atlas
 
-## 🏗️ Architecture
+## Architecture
 
 The system uses a **3-stage similarity ranking algorithm**:
 
@@ -84,7 +84,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 - ✅ Correct gender/category matching
 - ✅ Fast response times (~1-2 seconds)
 
-## 📊 Performance
+## Performance
 
 | Metric | Score |
 |--------|-------|
@@ -94,7 +94,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 | **Dataset Size** | 225 products |
 | **Embedding Dimensions** | 2048 (ResNet), 512 (CLIP) |
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -124,7 +124,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 > python app.py  
 
 
-## 📝 License
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
