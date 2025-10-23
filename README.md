@@ -111,6 +111,7 @@ The system uses a **3-stage similarity ranking algorithm**:
 
 #### ✔ Install dependencies
 
+>cd webapp
 > pip install -r requirements.txt  
 
 #### ✔ Database Access
