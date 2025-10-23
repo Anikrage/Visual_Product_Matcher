@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Anik Halder 24MCA0251">
     <title>Visual Product Matcher by Anik Halder 24MCA0251</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!--bootstrap 5.3-->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Product Matcher</a>
+            <a class="navbar-brand" href="/">Visual Product Matcher</a>
             <div class="d-none d-md-block">
                 <a href="https://github.com/Anikrage" target="_blank" class="text-white text-decoration-none me-3">GitHub</a>
                 <a href="https://github.com/Anikrage/Visual_Product_Matcher" target="_blank" class="text-white text-decoration-none">Repository</a>
@@ -27,26 +27,59 @@
         {% endif %}
         {% endwith %}
 
-
-
-        <!-- image search -->
+        <!-- image search with filters added-->
         <div class="search-box text-white">
             <h4>Upload Image to Search</h4>
             <form action="/search" method="POST" enctype="multipart/form-data" id="searchForm">
-                <div class="row">
-                    <div class="col-12 col-md-9" style="margin-bottom:10px;">
-                        <input type="file" name="image" class="form-control" required>
+                
+                <div class="mb-2">
+                    <input class="form-check-input" type="radio" name="image_source" id="srcUp" value="upload" checked onchange="toggleSrc()">
+                    <label class="form-check-label me-3" for="srcUp">Upload</label>
+                    <input class="form-check-input" type="radio" name="image_source" id="srcUrl" value="url" onchange="toggleSrc()">
+                    <label class="form-check-label" for="srcUrl">URL</label>
+                </div>
+
+                <div id="upSec" class="mb-2">
+                    <input type="file" name="image" id="imgUp" class="form-control" accept="image/*" onchange="showPreview(event)">
+                </div>
+
+                <div id="urlSec" style="display:none" class="mb-2">
+                    <input type="text" name="image_url" id="imgUrl" class="form-control" placeholder="https://example.com/image.jpg">
+                </div>
+
+                <div id="imgPrev" style="display:none;margin-bottom:10px;">
+                    <img id="previewImage" src="" style="max-width:200px;max-height:200px;border-radius:5px;">
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Min Similarity: <span id="simVal">0%</span></label>
+                    <input type="range" class="form-range" name="min_similarity" id="minSim" min="0" max="1" step="0.05" value="0" oninput="updSim(this.value)">
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-12 col-md-6">
+                        <select name="master_category" class="form-select">
+                            <option value="">Master Category</option>
+                            {% for cat in master_categories %}
+                            <option>{{cat}}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-12 col-md-3">
-                        <button type="submit" class="btn btn-light w-100">Search</button>
+                    <div class="col-12 col-md-6">
+                        <select name="sub_category" class="form-select">
+                            <option value="">Sub Category</option>
+                            {% for cat in sub_categories %}
+                            <option>{{cat}}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
+
+                <button type="submit" class="btn btn-light">Search</button>
             </form>
         </div>
 
-
-
-        <!-- filters -->
+        <!-- Index page filters for all products shown-->
         <div class="card mb-4">
             <div class="card-body">
                 <strong>Filter</strong>
@@ -76,8 +109,6 @@
             </div>
         </div>
 
-
-
         <p id="prodCount">Showing {{products|length}} out of {{total_products}} products</p>
         
         <div class="row" id="prodContainer">
@@ -94,8 +125,6 @@
             </div>
             {% endfor %}
         </div>
-
-
 
         {%if products|length==0%}
         <div style="text-align:center; padding:50px;">
@@ -124,10 +153,28 @@
         var mCat = "{{current_master}}";
         var sCat = "{{current_sub}}";
         var totalProds = parseInt("{{total_products}}");
-        
-        // show loading on search
+        // Show loading on search
         document.getElementById('searchForm').addEventListener('submit',function(){
             document.getElementById('loadingOverlay').classList.add('show');
+        });
+        // Hide loading overlay and reset form when navigating back
+        // I do not understand why this took me 6 hours to remember to reset the fields on browser control ?
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || performance.navigation.type === 2) {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                var form = document.getElementById('searchForm');
+                if (form) {
+                    form.reset();
+                    document.getElementById('imgPrev').style.display='none';
+                    document.getElementById('simVal').textContent='0%';
+                    document.getElementById('upSec').style.display='block';
+                    document.getElementById('urlSec').style.display='none';
+                }
+            }
+        });
+        // Also hide loading overlay on normal page load
+        window.addEventListener('load', function() {
+            document.getElementById('loadingOverlay').classList.remove('show');
         });
         
         function loadMore(){
@@ -165,7 +212,32 @@
                 alert('Error loading products');
             });
         }
+        
+        //helper function to toggle image source
+        function toggleSrc(){
+            var up=document.getElementById('srcUp').checked;
+            document.getElementById('upSec').style.display=up?'block':'none';
+            document.getElementById('urlSec').style.display=up?'none':'block';
+            document.getElementById('imgPrev').style.display='none';
+        }
+
+        //helper funtion to show what image is uploaded, need to implement on the url source too
+        function showPreview(e){
+            var r=new FileReader();
+            r.onload=function(){
+                document.getElementById('previewImage').src=r.result;
+                document.getElementById('imgPrev').style.display='block';
+            };
+            r.readAsDataURL(e.target.files[0]);
+        }
+
+        function updSim(v){
+            document.getElementById('simVal').textContent=Math.round(v*100)+'%';
+        }
     </script>
+
+
+
 </body>
 <footer class="bg-light text-center py-3 mt-5">
     <p class="mb-0">Built by <a href="https://github.com/Anikrage" target="_blank">Anik Halder</a> | 

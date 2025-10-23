@@ -1,5 +1,8 @@
 import os
 import requests
+from io import BytesIO
+from PIL import Image
+import uuid
 
 from flask import Flask
 from flask import render_template
@@ -93,71 +96,115 @@ def health():
 
 @app.route('/search',methods=['POST'])
 def search_product():
-    if 'image' not in request.files:
-        flash('Please upload an image')
-        return redirect(url_for('index'))
+    fpath=None
+    temp_path=None
     
-    #sanity checks
-    file=request.files['image']
-    if file.filename=='' or not check_filetype(file.filename):
-        return redirect(url_for('index'))
+    img_source=request.form.get('image_source','upload')
+    min_sim=float(request.form.get('min_similarity',0.0))
     
-    res_num=int(request.form.get('k',10))
-    master_filter=request.form.get('master_category','')
-    sub_filter=request.form.get('sub_category','')
-    
-    #save the uploaded file
-    filename=secure_filename(file.filename)
-    fpath=os.path.join(app.config['UPLOAD_FOLDER'],filename)
-    file.save(fpath)
-    
-    #main functionality stuff
     try:
-        with open(fpath,'rb') as f:
-            filedata={'file':(filename,f,'image/jpeg')}
-            api_res=requests.post(api_url,files=filedata,params={'k':10,'a':0.6},timeout=30)
-            
-            if api_res.status_code != 200: #show errors
-                flash('API error')
+        if img_source=='url':
+            # User provided a URL instead of uploading
+            img_url=request.form.get('image_url')
+            if not img_url:
+                flash('Please provide an image URL')
                 return redirect(url_for('index'))
             
-            results=api_res.json()['results']
-            filtered=[]
-            for item in results[:]:
-                if item['similarity'] < 0.80:
-                    continue
-                prod_data=products_collection.find_one({'product_id':item['product_id']})
-                
-                if not prod_data:
-                    continue
-                if master_filter and prod_data['master_category']!=master_filter:
-                    continue
-                if sub_filter and prod_data['sub_category']!=sub_filter:
-                    continue
-                item['master_category']=prod_data['master_category']
-                item['sub_category']=prod_data['sub_category']
-                filtered.append(item)
-                
-                if len(filtered) >= res_num:
-                    break
-                
-        master_cats=products_collection.distinct('master_category')
-        sub_cats=products_collection.distinct('sub_category')
+            resp=requests.get(img_url,timeout=10)
+            image_data=resp.content
+            
+            # Need to save this locally for display purposes
+            img=Image.open(BytesIO(image_data))
+            import uuid
+            temp_path=f'static/temp_upload_{uuid.uuid4().hex}.jpg'
+            img.save(temp_path)
+            uploaded_img_url='/'+temp_path
+            
+        else:
+            # Regular file upload path
+            if 'image' not in request.files:
+                flash('Please upload an image')
+                return redirect(url_for('index'))
+
+            file=request.files['image']
+            if file.filename=='' or not check_filetype(file.filename):
+                # Invalid file
+                return redirect(url_for('index'))
+
+            filename=secure_filename(file.filename)
+            fpath=os.path.join(app.config['UPLOAD_FOLDER'],filename)
+            file.save(fpath)
+
+            with open(fpath,'rb') as f:
+                image_data=f.read()
+
+            img=Image.open(BytesIO(image_data))
+            import uuid  # generate unique filename
+            temp_path=f'static/temp_upload_{uuid.uuid4().hex}.jpg'
+            img.save(temp_path)
+            uploaded_img_url='/'+temp_path
+
+        # Max number of results we want to display
+        res_num=20
+        master_filter=request.form.get('master_category','')
+        sub_filter=request.form.get('sub_category','')
+
+        # Call the similarity API
+        filedata={'file':('image.jpg',image_data,'image/jpeg')}
+        api_res=requests.post(api_url,files=filedata,params={'k':50,'a':0.6},timeout=30)
+
+        if api_res.status_code != 200:
+            # Something went wrong with the API
+            flash('API error')
+            return redirect(url_for('index'))
+
+        results=api_res.json()['results']
+        filtered=[]
         
+        # Loop through results and apply filters
+        for item in results[:]:
+            if item['similarity'] < min_sim:
+                continue
+            
+            prod_data=products_collection.find_one({'product_id':item['product_id']})
+            if not prod_data:
+                # Product not found in DB
+                continue
+                
+            # Check category filters
+            if master_filter and prod_data['master_category']!=master_filter:
+                continue
+            if sub_filter and prod_data['sub_category']!=sub_filter:
+                continue
+                
+            item['master_category']=prod_data['master_category']
+            item['sub_category']=prod_data['sub_category']
+            filtered.append(item)
+            
+            if len(filtered) >= res_num:
+                # Got enough results
+                break
+                
         return render_template('results.html',
-                                results=filtered,
-                                master_categories=master_cache,
-                                sub_categories=sub_cache,
-                                filter_master=master_filter,
-                                filter_sub=sub_filter)
+                            results=filtered,
+                            uploaded_image=uploaded_img_url,
+                            min_similarity=min_sim,
+                            master_categories=master_cache,
+                            sub_categories=sub_cache,
+                            filter_master=master_filter,
+                            filter_sub=sub_filter)
+                            
     except Exception as e:
         flash(str(e),'error')
         return redirect(url_for('index'))
 
     finally:
-        if os.path.exists(fpath):
+        # Cleanup - remove temporary files
+        if fpath and os.path.exists(fpath):
             os.remove(fpath)
-            
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
 @app.route('/test')
 def test():
     test_data = ['apple', 'banana']
