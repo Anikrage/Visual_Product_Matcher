@@ -94,7 +94,7 @@ def health():
     }
 
 
-@app.route('/search',methods=['POST'])
+@app.route('/search',methods=['POST']) #added oversight where in multiple users are using to prevent racearound conditions with image uploads
 def search_product():
     fpath=None
     temp_path=None
